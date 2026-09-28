@@ -1,0 +1,43 @@
+{
+    "Version": "1.2",
+    "Data": {
+        "Source": "e:\\project\\ue_learn\\plugins\\custommeshpass\\source\\custommeshpass\\private\\rendering\\custommeshpassmeshprocessor.cpp",
+        "ProvidedModule": "",
+        "PCH": "e:\\project\\ue_learn\\intermediate\\build\\win64\\x64\\ue_learneditor\\development\\unrealed\\sharedpch.unrealed.project.valapi.cpp20.h.pch",
+        "Includes": [
+            "e:\\project\\ue_learn\\plugins\\custommeshpass\\intermediate\\build\\win64\\x64\\unrealeditor\\development\\custommeshpass\\definitions.custommeshpass.h",
+            "e:\\project\\ue_learn\\plugins\\custommeshpass\\source\\custommeshpass\\private\\rendering\\custommeshpassmeshprocessor.h",
+            "d:\\unreal\\ue_5.5\\engine\\source\\runtime\\renderer\\public\\meshpassprocessor.h",
+            "d:\\unreal\\ue_5.5\\engine\\source\\runtime\\renderer\\public\\meshdrawshaderbindings.h",
+            "d:\\unreal\\ue_5.5\\engine\\source\\runtime\\renderer\\public\\meshmaterialshader.h",
+            "d:\\unreal\\ue_5.5\\engine\\source\\runtime\\renderer\\public\\materialshader.h",
+            "d:\\unreal\\ue_5.5\\engine\\source\\runtime\\engine\\public\\psoprecachematerial.h",
+            "d:\\unreal\\ue_5.5\\engine\\source\\runtime\\core\\public\\experimental\\containers\\robinhoodhashtable.h",
+            "e:\\project\\ue_learn\\plugins\\custommeshpass\\source\\custommeshpass\\private\\rendering\\custommeshpassshaders.h",
+            "e:\\project\\ue_learn\\plugins\\custommeshpass\\source\\custommeshpass\\public\\custommeshpasstypes.h",
+            "e:\\project\\ue_learn\\plugins\\custommeshpass\\intermediate\\build\\win64\\unrealeditor\\inc\\custommeshpass\\uht\\custommeshpasstypes.generated.h",
+            "d:\\unreal\\ue_5.5\\engine\\source\\runtime\\renderer\\public\\meshpassprocessor.inl",
+            "d:\\unreal\\ue_5.5\\engine\\source\\runtime\\engine\\public\\materials\\materialrenderproxy.h",
+            "d:\\unreal\\ue_5.5\\engine\\source\\runtime\\rendercore\\public\\rendergraphbuilder.h",
+            "d:\\unreal\\ue_5.5\\engine\\source\\runtime\\rendercore\\public\\rendergraphblackboard.h",
+            "d:\\unreal\\ue_5.5\\engine\\source\\runtime\\core\\public\\misc\\generatedtypename.h",
+            "d:\\unreal\\ue_5.5\\engine\\source\\runtime\\rendercore\\public\\rendergraphevent.h",
+            "d:\\unreal\\ue_5.5\\engine\\source\\runtime\\rendercore\\public\\rendergraphevent.inl",
+            "d:\\unreal\\ue_5.5\\engine\\source\\runtime\\rendercore\\public\\rendergraphpass.h",
+            "d:\\unreal\\ue_5.5\\engine\\source\\runtime\\rendercore\\public\\rendergraphparameter.h",
+            "d:\\unreal\\ue_5.5\\engine\\source\\runtime\\rendercore\\public\\rendergraphresources.h",
+            "d:\\unreal\\ue_5.5\\engine\\source\\runtime\\rhi\\public\\rhitransientresourceallocator.h",
+            "d:\\unreal\\ue_5.5\\engine\\source\\runtime\\rendercore\\public\\rendergraphresources.inl",
+            "d:\\unreal\\ue_5.5\\engine\\source\\runtime\\rendercore\\public\\rendergraphparameters.inl",
+            "d:\\unreal\\ue_5.5\\engine\\source\\runtime\\rendercore\\public\\rendergraphtrace.h",
+            "d:\\unreal\\ue_5.5\\engine\\source\\runtime\\rendercore\\public\\rendergraphvalidation.h",
+            "d:\\unreal\\ue_5.5\\engine\\source\\runtime\\rendercore\\public\\rendergraphbuilder.inl",
+            "d:\\unreal\\ue_5.5\\engine\\source\\runtime\\engine\\public\\psoprecachevalidation.h",
+            "d:\\unreal\\ue_5.5\\engine\\source\\runtime\\renderer\\public\\variablerateshadingimagemanager.h",
+            "d:\\unreal\\ue_5.5\\engine\\source\\runtime\\engine\\public\\materialdomain.h",
+            "d:\\unreal\\ue_5.5\\engine\\intermediate\\build\\win64\\unrealeditor\\inc\\engine\\uht\\materialdomain.generated.h"
+        ],
+        "ImportedModules": [],
+        "ImportedHeaderUnits": []
+    }
+}

@@ -1,0 +1,64 @@
+// CustomMeshPass 前向路径像素着色器（PrePostProcess）
+// Direct：主方向光（AtmosphereLight）
+// Indirect：Lumen 半透明 GI 体积，不可用时退回天光 SH
+
+#include "/Engine/Private/Common.ush"
+#include "/Plugin/CustomMeshPass/Private/CustomMeshPassCommon.ush"
+#include "/Plugin/CustomMeshPass/Private/CustomMeshPassBRDF.ush"
+#include "/Plugin/CustomMeshPass/Private/CustomMeshPassIndirect.ush"
+
+float3 BaseColor;
+float Metallic;
+float Roughness;
+
+void MainPS(
+	FCustomMeshPassVSToPS Interpolants
+	OPTIONAL_IsFrontFace,
+	out HALF4_TYPE OutColor : SV_Target0)
+{
+	ResolvedView = ResolveView();
+
+	FMaterialPixelParameters MaterialParameters = CMP_GetPixelParameters(Interpolants, bIsFrontFace);
+	float3 N = CMP_GetWorldNormal(MaterialParameters, bIsFrontFace);
+	// CameraVector：表面 → 相机
+	float3 V = normalize(MaterialParameters.CameraVector);
+	// Lumen froxel UV 用 TranslatedWorld + TranslatedWorldToClip（与引擎半透明一致的裁剪空间）
+	float3 TranslatedWorldPos = MaterialParameters.WorldPosition_CamRelative;
+
+	float3 Albedo = max(BaseColor, 0.0);
+	float Metal = saturate(Metallic);
+	float Rough = saturate(Roughness);
+
+	// AtmosphereLightDirection 已是 表面→光源 方向，不要再取负
+	float3 L0 = ResolvedView.AtmosphereLightDirection[0].xyz;
+	float3 LightColor0 = ResolvedView.AtmosphereLightIlluminanceOnGroundPostTransmittance[0].rgb;
+	float3 Direct = CMP_BRDF_Direct(N, V, L0, Albedo, Metal, Rough, LightColor0);
+
+	float3 DiffuseF0 = lerp(float3(0.04, 0.04, 0.04), Albedo, Metal);
+	float3 Kd = (1.0 - DiffuseF0) * (1.0 - Metal);
+	float3 DiffuseAlbedo = Kd * Albedo;
+
+	float3 IndirectIrradiance = 0.0;
+	BRANCH
+	//if (bLumenValid != 0)
+	//{
+	//	IndirectIrradiance = CMP_SampleLumenDiffuseGI(TranslatedWorldPos, N);
+	//}
+	//else
+	//{
+	//	IndirectIrradiance = CMP_GetSkySHDiffuse(N) * ResolvedView.SkyLightColor.rgb;
+	//}
+	IndirectIrradiance = CMP_SampleLumenDiffuseGI(TranslatedWorldPos, N);
+
+	float3 Indirect = DiffuseAlbedo * IndirectIrradiance;
+
+	// 极简环境高光：反射方向上的天光 SH × Fresnel（不走 ReflectionCapture / Lumen 反射）
+	float3 R = reflect(-V, N);
+	float3 SpecAmbient = CMP_GetSkySHDiffuse(R) * ResolvedView.SkyLightColor.rgb;
+	float NdotV = saturate(dot(N, V));
+	float3 FresnelAmbient = CMP_FresnelSchlick(NdotV, DiffuseF0);
+	Indirect += SpecAmbient * FresnelAmbient * (1.0 - Rough) * (0.5 + 0.5 * Metal);
+
+	float3 Color = Direct + Indirect;
+	OutColor = float4(Color * ResolvedView.PreExposure, 1.0);
+}

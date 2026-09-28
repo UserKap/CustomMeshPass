@@ -1,0 +1,86 @@
+// CustomMeshPass 间接光：天光 SH，或 Lumen 半透明 GI 体积（二选一）
+
+#pragma once
+
+uint bLumenValid;
+float3 LumenGridZParams;
+float3 LumenGridSize;
+Texture3D LumenVolume0;
+Texture3D LumenVolume1;
+SamplerState LumenVolumeSampler;
+
+// SkySH：桌面端是 View 上的 StructuredBuffer SRV，不在 ResolvedView（ViewState）里
+float3 CMP_GetSkySHDiffuse(float3 Normal)
+{
+	float4 N4 = float4(Normal, 1.0);
+	float3 c0;
+#if FEATURE_LEVEL <= FEATURE_LEVEL_ES3_1
+	c0.x = dot(ResolvedView.MobileSkyIrradianceEnvironmentMap[0], N4);
+	c0.y = dot(ResolvedView.MobileSkyIrradianceEnvironmentMap[1], N4);
+	c0.z = dot(ResolvedView.MobileSkyIrradianceEnvironmentMap[2], N4);
+	float4 vB = N4.xyzz * N4.yzzx;
+	float3 c1;
+	c1.x = dot(ResolvedView.MobileSkyIrradianceEnvironmentMap[3], vB);
+	c1.y = dot(ResolvedView.MobileSkyIrradianceEnvironmentMap[4], vB);
+	c1.z = dot(ResolvedView.MobileSkyIrradianceEnvironmentMap[5], vB);
+	float vC = N4.x * N4.x - N4.y * N4.y;
+	float3 c2 = ResolvedView.MobileSkyIrradianceEnvironmentMap[6].xyz * vC;
+#else
+	c0.x = dot(View.SkyIrradianceEnvironmentMap[0], N4);
+	c0.y = dot(View.SkyIrradianceEnvironmentMap[1], N4);
+	c0.z = dot(View.SkyIrradianceEnvironmentMap[2], N4);
+	float4 vB = N4.xyzz * N4.yzzx;
+	float3 c1;
+	c1.x = dot(View.SkyIrradianceEnvironmentMap[3], vB);
+	c1.y = dot(View.SkyIrradianceEnvironmentMap[4], vB);
+	c1.z = dot(View.SkyIrradianceEnvironmentMap[5], vB);
+	float vC = N4.x * N4.x - N4.y * N4.y;
+	float3 c2 = View.SkyIrradianceEnvironmentMap[6].xyz * vC;
+#endif
+	return max(0.0, c0 + c1 + c2);
+}
+
+// Lumen Translucency GI Volume：半透明用的 froxel，不是不透明的 Screen Probe
+// 按 LumenTranslucencyVolumeShared 的 SH 重建方式采样 History
+float3 CMP_SampleLumenDiffuseGI(float3 TranslatedWorldPos, float3 N)
+{
+	if (bLumenValid == 0 || LumenGridSize.z < 1.0)
+	{
+		return 0.0;
+	}
+
+	float4 Clip = mul(float4(TranslatedWorldPos, 1.0), ResolvedView.TranslatedWorldToClip);
+	float2 NDC = Clip.xy / max(abs(Clip.w), 1e-6);
+	// 出屏 / 相机后方：froxel 未覆盖
+	if (any(abs(NDC) > 1.0) || Clip.w <= 0.0)
+	{
+		return 0.0;
+	}
+
+	float NormalizedZ = log2(Clip.w * LumenGridZParams.x + LumenGridZParams.y)
+		* LumenGridZParams.z / LumenGridSize.z;
+	if (NormalizedZ < 0.0 || NormalizedZ > 1.0)
+	{
+		return 0.0;
+	}
+
+	float3 VolumeUV = float3(NDC * float2(0.5, -0.5) + 0.5, NormalizedZ);
+
+	float3 Ambient = LumenVolume0.SampleLevel(LumenVolumeSampler, VolumeUV, 0).xyz;
+	float3 Directional = LumenVolume1.SampleLevel(LumenVolumeSampler, VolumeUV, 0).xyz;
+
+	// SH0 = Ambient，SH1 ≈ Directional × 色度
+	float Lum = Luminance(Ambient) + 1e-5;
+	float3 NormAmbient = Ambient / Lum;
+	float3 SH1R = Directional * NormAmbient.r;
+	float3 SH1G = Directional * NormAmbient.g;
+	float3 SH1B = Directional * NormAmbient.b;
+
+	// 一阶 SH 漫反射：Irradiance ≈ SH0 + (2/3)·SH1·N，再 /π 得 Lambert 辐照度因子
+	const float K = 2.0 / 3.0;
+	float3 Irradiance;
+	Irradiance.r = Ambient.r + K * dot(SH1R, N);
+	Irradiance.g = Ambient.g + K * dot(SH1G, N);
+	Irradiance.b = Ambient.b + K * dot(SH1B, N);
+	return max(Irradiance, 0.0) / PI;
+}

@@ -1,0 +1,23 @@
+{
+    "Version": "1.2",
+    "Data": {
+        "Source": "e:\\project\\ue_learn\\plugins\\custommeshpass\\source\\custommeshpass\\private\\rendering\\custommeshpassshaders.cpp",
+        "ProvidedModule": "",
+        "PCH": "e:\\project\\ue_learn\\intermediate\\build\\win64\\x64\\ue_learneditor\\development\\unrealed\\sharedpch.unrealed.project.valapi.cpp20.h.pch",
+        "Includes": [
+            "e:\\project\\ue_learn\\plugins\\custommeshpass\\intermediate\\build\\win64\\x64\\unrealeditor\\development\\custommeshpass\\definitions.custommeshpass.h",
+            "e:\\project\\ue_learn\\plugins\\custommeshpass\\source\\custommeshpass\\private\\rendering\\custommeshpassshaders.h",
+            "d:\\unreal\\ue_5.5\\engine\\source\\runtime\\renderer\\public\\meshmaterialshader.h",
+            "d:\\unreal\\ue_5.5\\engine\\source\\runtime\\renderer\\public\\materialshader.h",
+            "e:\\project\\ue_learn\\plugins\\custommeshpass\\source\\custommeshpass\\public\\custommeshpasstypes.h",
+            "e:\\project\\ue_learn\\plugins\\custommeshpass\\intermediate\\build\\win64\\unrealeditor\\inc\\custommeshpass\\uht\\custommeshpasstypes.generated.h",
+            "d:\\unreal\\ue_5.5\\engine\\source\\runtime\\engine\\public\\materialdomain.h",
+            "d:\\unreal\\ue_5.5\\engine\\intermediate\\build\\win64\\unrealeditor\\inc\\engine\\uht\\materialdomain.generated.h",
+            "d:\\unreal\\ue_5.5\\engine\\source\\runtime\\renderer\\public\\meshdrawshaderbindings.h",
+            "d:\\unreal\\ue_5.5\\engine\\source\\runtime\\engine\\public\\scenetexturesconfig.h",
+            "d:\\unreal\\ue_5.5\\engine\\source\\runtime\\rendercore\\public\\gbufferinfo.h"
+        ],
+        "ImportedModules": [],
+        "ImportedHeaderUnits": []
+    }
+}

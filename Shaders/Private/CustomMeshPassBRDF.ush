@@ -1,0 +1,59 @@
+// CustomMeshPass 自写 BRDF：Lambert 漫反射 + GGX 高光（金属工作流简化版）
+
+#pragma once
+
+// 菲涅尔项
+float3 CMP_FresnelSchlick(float CosTheta, float3 F0)
+{
+	float OneMinus = saturate(1.0 - CosTheta);
+	float Factor = OneMinus * OneMinus;
+	Factor *= Factor * OneMinus;
+	return F0 + (1.0 - F0) * Factor;
+}
+
+// GGX 法线分布函数
+float CMP_D_GGX(float NdotH, float a)
+{
+	float a2 = a * a;
+	float d = (NdotH * a2 - NdotH) * NdotH + 1.0;
+	return a2 / (PI * d * d + 1e-7);
+}
+
+// GGX 几何函数
+float CMP_G_SchlickGGX(float NdotX, float k)
+{
+	return NdotX / (NdotX * (1.0 - k) + k + 1e-7);
+}
+
+// Smith 几何函数 ： 考虑了微表面法线分布和几何遮挡
+float CMP_G_Smith(float NdotV, float NdotL, float RoughnessIn)
+{
+	float r = RoughnessIn + 1.0;
+	float k = (r * r) / 8.0;
+	return CMP_G_SchlickGGX(NdotV, k) * CMP_G_SchlickGGX(NdotL, k);
+}
+
+// 直接光照 BRDF
+float3 CMP_BRDF_Direct(
+	float3 N, float3 V, float3 L,
+	float3 Albedo, float Metal, float Rough,
+	float3 LightColor)
+{
+	float3 H = normalize(V + L);
+	float NdotL = saturate(dot(N, L));
+	float NdotV = saturate(dot(N, V));
+	float NdotH = saturate(dot(N, H));
+	float VdotH = saturate(dot(V, H));
+
+	float3 F0 = lerp(float3(0.04, 0.04, 0.04), Albedo, Metal);
+	float3 F = CMP_FresnelSchlick(VdotH, F0);
+	float a = max(Rough * Rough, 0.002);
+	float D = CMP_D_GGX(NdotH, a);
+	float G = CMP_G_Smith(NdotV, NdotL, Rough);
+
+	float3 Specular = (D * G * F) / max(4.0 * NdotV * NdotL, 1e-4);
+	float3 Kd = (1.0 - F) * (1.0 - Metal);
+	float3 Diffuse = Kd * Albedo / PI;
+
+	return (Diffuse + Specular) * LightColor * NdotL;
+}

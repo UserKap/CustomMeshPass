@@ -1,0 +1,35 @@
+// CustomMeshPass 公共部分：VS→PS 插值结构 + 表面法线
+// 依赖材质/顶点工厂生成代码，调用方须先 include "/Engine/Private/Common.ush"
+
+#pragma once
+
+#include "/Engine/Generated/Material.ush"
+#include "/Engine/Generated/VertexFactory.ush"
+
+struct FCustomMeshPassVSToPS
+{
+	FVertexFactoryInterpolantsVSToPS FactoryInterpolants;
+	float4 Position : SV_POSITION;
+};
+
+#if PIXELSHADER
+
+/** 背面朝向相机时翻转法线（双面网格时仍得到正确光照） */
+float3 CMP_GetWorldNormal(FMaterialPixelParameters MaterialParameters, bool bIsFrontFace)
+{
+	float3 N = normalize(MaterialParameters.WorldNormal);
+	return bIsFrontFace ? N : -N;
+}
+
+/** 两个 PS 共用：由插值数据重建材质像素参数（只取几何信息，不使用材质输出的颜色） */
+FMaterialPixelParameters CMP_GetPixelParameters(FCustomMeshPassVSToPS Interpolants, bool bIsFrontFace)
+{
+	float4 SvPosition = Interpolants.Position;
+	FMaterialPixelParameters MaterialParameters = GetMaterialPixelParameters(Interpolants.FactoryInterpolants, SvPosition);
+	FPixelMaterialInputs PixelMaterialInputs;
+	CalcMaterialParameters(MaterialParameters, PixelMaterialInputs, SvPosition, bIsFrontFace);
+	GetMaterialCoverageAndClipping(MaterialParameters, PixelMaterialInputs);
+	return MaterialParameters;
+}
+
+#endif

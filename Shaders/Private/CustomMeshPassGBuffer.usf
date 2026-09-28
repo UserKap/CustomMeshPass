@@ -1,0 +1,44 @@
+// CustomMeshPass GBuffer 路径像素着色器（PostRenderBasePassDeferred）
+// 只写表面属性（ShadingModel = DefaultLit），光照由引擎 Deferred + Lumen 完成
+
+#include "/Engine/Private/Common.ush"
+#include "/Engine/Private/ShadingCommon.ush"
+#include "/Engine/Private/DeferredShadingCommon.ush"
+#include "/Plugin/CustomMeshPass/Private/CustomMeshPassCommon.ush"
+
+float3 BaseColor;
+float Metallic;
+float Roughness;
+
+void MainPS(
+	FCustomMeshPassVSToPS Interpolants
+	OPTIONAL_IsFrontFace,
+	out float4 OutSceneColor : SV_Target0,
+	out float4 OutGBufferA : SV_Target1,
+	out float4 OutGBufferB : SV_Target2,
+	out float4 OutGBufferC : SV_Target3)
+{
+	ResolvedView = ResolveView();
+
+	FMaterialPixelParameters MaterialParameters = CMP_GetPixelParameters(Interpolants, bIsFrontFace);
+
+	FGBufferData GBuffer = (FGBufferData)0;
+	GBuffer.WorldNormal = CMP_GetWorldNormal(MaterialParameters, bIsFrontFace);
+	GBuffer.BaseColor = max(BaseColor, 0.0);
+	GBuffer.Metallic = saturate(Metallic);
+	GBuffer.Specular = 0.5;
+	GBuffer.Roughness = saturate(Roughness);
+	GBuffer.GBufferAO = 1.0;
+	GBuffer.IndirectIrradiance = 1.0;
+	GBuffer.ShadingModelID = SHADINGMODELID_DEFAULT_LIT;
+	GBuffer.SelectiveOutputMask = 0;
+	GBuffer.CustomData = 0;
+	GBuffer.PerObjectGBufferData = 0;
+	GBuffer.PrecomputedShadowFactors = half4(1, 1, 1, 1);
+
+	// RT0 的写掩码在 C++ 侧为 CW_NONE，这里的值不会写入 SceneColor
+	OutSceneColor = float4(0.0, 0.0, 0.0, 0.0);
+
+	float4 OutGBufferD, OutGBufferE, OutVelocity;
+	EncodeGBuffer(GBuffer, OutGBufferA, OutGBufferB, OutGBufferC, OutGBufferD, OutGBufferE, OutVelocity);
+}

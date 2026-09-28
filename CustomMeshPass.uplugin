@@ -1,0 +1,26 @@
+{
+	"FileVersion": 3,
+	"Version": 2,
+	"VersionName": "2.0",
+	"FriendlyName": "Custom Mesh Pass",
+	"Description": "自定义 Mesh Pass 绘制 StaticMesh：写 GBuffer 接入引擎 Deferred + Lumen，或前向自写 BRDF。提供组件、Actor、项目设置页与蓝图 API。",
+	"Category": "Rendering",
+	"CreatedBy": "UE_Learn",
+	"CreatedByURL": "",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"EngineVersion": "5.5.0",
+	"IsBetaVersion": false,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"EnabledByDefault": true,
+	"CanContainContent": false,
+	"Modules": [
+		{
+			"Name": "CustomMeshPass",
+			"Type": "Runtime",
+			"LoadingPhase": "PostConfigInit"
+		}
+	]
+}

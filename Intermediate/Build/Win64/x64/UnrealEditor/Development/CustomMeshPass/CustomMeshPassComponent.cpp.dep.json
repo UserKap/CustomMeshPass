@@ -1,0 +1,19 @@
+{
+    "Version": "1.2",
+    "Data": {
+        "Source": "e:\\project\\ue_learn\\plugins\\custommeshpass\\source\\custommeshpass\\private\\custommeshpasscomponent.cpp",
+        "ProvidedModule": "",
+        "PCH": "e:\\project\\ue_learn\\intermediate\\build\\win64\\x64\\ue_learneditor\\development\\unrealed\\sharedpch.unrealed.project.valapi.cpp20.h.pch",
+        "Includes": [
+            "e:\\project\\ue_learn\\plugins\\custommeshpass\\intermediate\\build\\win64\\x64\\unrealeditor\\development\\custommeshpass\\definitions.custommeshpass.h",
+            "e:\\project\\ue_learn\\plugins\\custommeshpass\\source\\custommeshpass\\public\\custommeshpasscomponent.h",
+            "e:\\project\\ue_learn\\plugins\\custommeshpass\\source\\custommeshpass\\public\\custommeshpasstypes.h",
+            "e:\\project\\ue_learn\\plugins\\custommeshpass\\intermediate\\build\\win64\\unrealeditor\\inc\\custommeshpass\\uht\\custommeshpasstypes.generated.h",
+            "e:\\project\\ue_learn\\plugins\\custommeshpass\\intermediate\\build\\win64\\unrealeditor\\inc\\custommeshpass\\uht\\custommeshpasscomponent.generated.h",
+            "e:\\project\\ue_learn\\plugins\\custommeshpass\\source\\custommeshpass\\public\\custommeshpasssubsystem.h",
+            "e:\\project\\ue_learn\\plugins\\custommeshpass\\intermediate\\build\\win64\\unrealeditor\\inc\\custommeshpass\\uht\\custommeshpasssubsystem.generated.h"
+        ],
+        "ImportedModules": [],
+        "ImportedHeaderUnits": []
+    }
+}

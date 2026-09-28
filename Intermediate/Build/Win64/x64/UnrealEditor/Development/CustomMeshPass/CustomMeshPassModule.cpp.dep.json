@@ -1,21 +1,21 @@
 {
     "Version": "1.2",
     "Data": {
-        "Source": "e:\\project\\ue_learn\\plugins\\custommeshpass\\source\\custommeshpass\\private\\custommeshpassmodule.cpp",
+        "Source": "d:\\unityproject\\unreal_learn_project\\plugins\\custommeshpass\\source\\custommeshpass\\private\\custommeshpassmodule.cpp",
         "ProvidedModule": "",
-        "PCH": "e:\\project\\ue_learn\\intermediate\\build\\win64\\x64\\ue_learneditor\\development\\unrealed\\sharedpch.unrealed.project.valapi.cpp20.h.pch",
+        "PCH": "d:\\unityproject\\unreal_learn_project\\intermediate\\build\\win64\\x64\\unreal_learn_projecteditor\\development\\unrealed\\sharedpch.unrealed.project.valapi.valexpapi.cpp20.h.pch",
         "Includes": [
-            "e:\\project\\ue_learn\\plugins\\custommeshpass\\intermediate\\build\\win64\\x64\\unrealeditor\\development\\custommeshpass\\definitions.custommeshpass.h",
-            "e:\\project\\ue_learn\\plugins\\custommeshpass\\source\\custommeshpass\\public\\custommeshpassmodule.h",
-            "d:\\unreal\\ue_5.5\\engine\\source\\runtime\\projects\\public\\interfaces\\ipluginmanager.h",
-            "d:\\unreal\\ue_5.5\\engine\\source\\runtime\\projects\\public\\plugindescriptor.h",
-            "d:\\unreal\\ue_5.5\\engine\\source\\runtime\\projects\\public\\custombuildsteps.h",
-            "d:\\unreal\\ue_5.5\\engine\\source\\runtime\\projects\\public\\localizationdescriptor.h",
-            "d:\\unreal\\ue_5.5\\engine\\source\\runtime\\projects\\public\\moduledescriptor.h",
-            "d:\\unreal\\ue_5.5\\engine\\source\\runtime\\projects\\public\\plugindisalloweddescriptor.h",
-            "d:\\unreal\\ue_5.5\\engine\\source\\runtime\\projects\\public\\pluginreferencedescriptor.h",
-            "d:\\unreal\\ue_5.5\\engine\\source\\runtime\\projects\\public\\versescope.h",
-            "d:\\unreal\\ue_5.5\\engine\\source\\runtime\\core\\public\\misc\\configutilities.h"
+            "d:\\unityproject\\unreal_learn_project\\plugins\\custommeshpass\\intermediate\\build\\win64\\x64\\unrealeditor\\development\\custommeshpass\\definitions.custommeshpass.h",
+            "d:\\unityproject\\unreal_learn_project\\plugins\\custommeshpass\\source\\custommeshpass\\public\\custommeshpassmodule.h",
+            "d:\\ue\\ue_5.8\\engine\\source\\runtime\\projects\\public\\interfaces\\ipluginmanager.h",
+            "d:\\ue\\ue_5.8\\engine\\source\\runtime\\projects\\public\\plugindescriptor.h",
+            "d:\\ue\\ue_5.8\\engine\\source\\runtime\\projects\\public\\custombuildsteps.h",
+            "d:\\ue\\ue_5.8\\engine\\source\\runtime\\projects\\public\\localizationdescriptor.h",
+            "d:\\ue\\ue_5.8\\engine\\source\\runtime\\projects\\public\\moduledescriptor.h",
+            "d:\\ue\\ue_5.8\\engine\\source\\runtime\\projects\\public\\plugindisalloweddescriptor.h",
+            "d:\\ue\\ue_5.8\\engine\\source\\runtime\\projects\\public\\pluginreferencedescriptor.h",
+            "d:\\ue\\ue_5.8\\engine\\source\\runtime\\projects\\public\\versescope.h",
+            "d:\\ue\\ue_5.8\\engine\\source\\runtime\\core\\public\\misc\\configutilities.h"
         ],
         "ImportedModules": [],
         "ImportedHeaderUnits": []

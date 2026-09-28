@@ -1,5 +1,6 @@
 #include "CustomMeshPassPasses.h"
 
+#include "CustomMeshPassForwardLight.h"
 #include "CustomMeshPassLumenBridge.h"
 #include "CustomMeshPassMeshProcessor.h"
 
@@ -29,6 +30,7 @@ BEGIN_SHADER_PARAMETER_STRUCT(FCustomMeshPassForwardParameters, )
 	SHADER_PARAMETER_RDG_UNIFORM_BUFFER(FInstanceCullingGlobalUniforms, InstanceCulling)
 	SHADER_PARAMETER_RDG_TEXTURE(Texture3D, LumenVolume0)
 	SHADER_PARAMETER_RDG_TEXTURE(Texture3D, LumenVolume1)
+	SHADER_PARAMETER_RDG_UNIFORM_BUFFER(FCustomMeshPassForwardLightParameters, ForwardLight)
 	RENDER_TARGET_BINDING_SLOTS()
 END_SHADER_PARAMETER_STRUCT()
 
@@ -89,6 +91,11 @@ namespace
 
 					Processor.CurrentElementData = SharedData;
 					Processor.CurrentElementData.Surface = Item.Surface;
+					Processor.CurrentElementData.BaseMap = Item.BaseMap.GetReference();
+					Processor.CurrentElementData.NormalMap = Item.NormalMap.GetReference();
+					Processor.CurrentElementData.AOMap = Item.AOMap.GetReference();
+					Processor.CurrentElementData.RoughnessMap = Item.RoughnessMap.GetReference();
+					Processor.CurrentElementData.MetallicMap = Item.MetallicMap.GetReference();
 					Processor.AddMeshBatch(MeshBatches[0], /*BatchElementMask=*/1, Item.Proxy);
 				}
 			});
@@ -167,6 +174,7 @@ namespace CustomMeshPass
 		PassParameters->InstanceCulling = FInstanceCullingContext::CreateDummyInstanceCullingUniformBuffer(GraphBuilder);
 		PassParameters->LumenVolume0 = Lumen.Volume0;
 		PassParameters->LumenVolume1 = Lumen.Volume1;
+		PassParameters->ForwardLight = CreateForwardLightUniformBuffer(GraphBuilder, View);
 		PassParameters->RenderTargets[0] = FRenderTargetBinding(SceneColorTexture, ERenderTargetLoadAction::ELoad);
 		PassParameters->RenderTargets.DepthStencil = FDepthStencilBinding(
 			SceneDepthTexture,
@@ -192,6 +200,7 @@ namespace CustomMeshPass
 				SharedData.LumenGridZParams = GridZParams;
 				SharedData.LumenGridSize = GridSize;
 				SharedData.bLumenValid = bLumenValid;
+				SharedData.ForwardLightUniformBuffer = PassParameters->ForwardLight->GetRHI();
 
 				DrawItems(RHICmdList, View, Items, ECustomMeshPassDrawMode::ForwardCustomBRDF, SharedData, ViewRect);
 			});

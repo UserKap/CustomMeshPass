@@ -10,7 +10,50 @@ struct FCustomMeshPassVSToPS
 {
 	FVertexFactoryInterpolantsVSToPS FactoryInterpolants;
 	float4 Position : SV_POSITION;
+	// 自定义语义，避开顶点工厂占用的 TEXCOORD
+	float2 BaseUV : CMP_BASEUV;
 };
+
+#if VERTEXSHADER
+
+/** 所有贴图共用的 UV 通道（0 = UV0） */
+uint UVChannel;
+/** xy = Tiling，zw = Offset */
+float4 UVTilingOffset;
+
+/**
+ * 取网格第 UVChannel 套 UV，超出网格已有通道数时用最后一套。
+ * 本 Pass 只对着默认表面材质编译，那份材质通常不声明纹理坐标，
+ * MaterialParameters.TexCoords 会被编译掉。这里直接读顶点工厂的 UV 缓冲。
+ * 非 Manual Vertex Fetch 的平台只能拿到 UV0。
+ */
+float2 CMP_FetchMeshUV(FVertexFactoryInput Input)
+{
+#if MANUAL_VERTEX_FETCH
+	const uint NumTexCoords = (uint)LocalVF.VertexFetch_Parameters[VF_NumTexcoords_Index];
+	if (NumTexCoords == 0)
+	{
+		return float2(0.0, 0.0);
+	}
+	const uint VertexIndex = (uint)LocalVF.VertexFetch_Parameters[VF_VertexOffset] + Input.VertexId;
+	const uint Channel = min(UVChannel, NumTexCoords - 1);
+	return LocalVF.VertexFetch_TexCoordBuffer[NumTexCoords * VertexIndex + Channel];
+#elif NUM_MATERIAL_TEXCOORDS_VERTEX > 1
+	return Input.TexCoords0.xy;
+#elif NUM_MATERIAL_TEXCOORDS_VERTEX == 1
+	return Input.TexCoords0;
+#else
+	return float2(0.0, 0.0);
+#endif
+}
+
+/** 贴图采样 UV：线性变换放在 VS，插值后结果与逐像素计算相同 */
+float2 CMP_FetchBaseUV(FVertexFactoryInput Input)
+{
+	return CMP_FetchMeshUV(Input) * UVTilingOffset.xy + UVTilingOffset.zw;
+}
+
+#endif
 
 #if PIXELSHADER
 

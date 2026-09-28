@@ -1,5 +1,25 @@
 {
 	"RemapUnityFiles": 
 	{
+		"Module.CustomMeshPass.cpp.obj": [
+			"CustomMeshPass.init.gen.cpp.obj",
+			"CustomMeshPassActor.gen.cpp.obj",
+			"CustomMeshPassComponent.gen.cpp.obj",
+			"CustomMeshPassSettings.gen.cpp.obj",
+			"CustomMeshPassSubsystem.gen.cpp.obj",
+			"CustomMeshPassTypes.gen.cpp.obj",
+			"PerModuleInline.gen.cpp.obj",
+			"CustomMeshPassActor.cpp.obj",
+			"CustomMeshPassComponent.cpp.obj",
+			"CustomMeshPassCVars.cpp.obj",
+			"CustomMeshPassModule.cpp.obj",
+			"CustomMeshPassSettings.cpp.obj",
+			"CustomMeshPassSubsystem.cpp.obj",
+			"CustomMeshPassLumenBridge.cpp.obj",
+			"CustomMeshPassMeshProcessor.cpp.obj",
+			"CustomMeshPassPasses.cpp.obj",
+			"CustomMeshPassSceneViewExtension.cpp.obj",
+			"CustomMeshPassShaders.cpp.obj"
+		]
 	}
 }

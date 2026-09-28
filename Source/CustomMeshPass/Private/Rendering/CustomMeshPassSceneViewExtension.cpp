@@ -6,6 +6,25 @@
 #include "CustomMeshPassSubsystem.h"
 
 #include "RenderingThread.h"
+#include "TextureResource.h"
+
+namespace
+{
+	FTextureRHIRef ResolveTexture2D(const UTexture2D* Texture)
+	{
+		if (Texture)
+		{
+			if (const FTextureResource* Resource = Texture->GetResource())
+			{
+				if (FRHITexture* TextureRHI = Resource->GetTexture2DRHI())
+				{
+					return TextureRHI;
+				}
+			}
+		}
+		return nullptr;
+	}
+}
 
 FCustomMeshPassSceneViewExtension::FCustomMeshPassSceneViewExtension(const FAutoRegister& AutoRegister, UWorld* InWorld)
 	: FWorldSceneViewExtension(AutoRegister, InWorld)
@@ -31,6 +50,11 @@ void FCustomMeshPassSceneViewExtension::BeginRenderViewFamily(FSceneViewFamily& 
 			FCustomMeshPassDrawItem& Item = Items.AddDefaulted_GetRef();
 			Item.Proxy = Comp.SceneProxy;
 			Item.Surface = Comp.GetSurface();
+			Item.BaseMap = ResolveTexture2D(Comp.BaseMap);
+			Item.NormalMap = ResolveTexture2D(Comp.NormalMap);
+			Item.AOMap = ResolveTexture2D(Comp.AOMap);
+			Item.RoughnessMap = ResolveTexture2D(Comp.RoughnessMap);
+			Item.MetallicMap = ResolveTexture2D(Comp.MetallicMap);
 		});
 	}
 

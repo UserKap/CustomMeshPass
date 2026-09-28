@@ -1,0 +1,119 @@
+// 默认 PBR（Default Lit）表面输入。只被像素着色器 include。
+// 标量由 C++ 绑定；贴图槽为空时 SurfaceMapMask 对应位为 0，改用标量。
+// BaseColor 在有 BaseMap 时与贴图相乘。金属 / 粗糙 / AO 有贴图时用贴图 R 通道，不再乘标量。
+
+#pragma once
+
+#define CMP_MAP_BASE      1u
+#define CMP_MAP_NORMAL    2u
+#define CMP_MAP_AO        4u
+#define CMP_MAP_ROUGHNESS 8u
+#define CMP_MAP_METALLIC  16u
+
+Texture2D BaseMap;
+Texture2D NormalMap;
+Texture2D AOMap;
+Texture2D RoughnessMap;
+Texture2D MetallicMap;
+SamplerState SurfaceSampler;
+uint SurfaceMapMask;
+
+float3 BaseColor;
+float Metallic;
+float Specular;
+float Roughness;
+float AmbientOcclusion;
+float3 Emissive;
+/** 法线贴图强度：缩放切线空间 XY，0 = 平面 */
+float NormalStrength;
+
+/**
+ * 表面属性。
+ * 1. 获取表面属性
+ * 2. 返回表面属性
+ */
+struct FCMP_PBRSurface
+{
+	float3 BaseColor;
+	float3 WorldNormal;
+	float Metallic;
+	float Specular;
+	float Roughness;
+	float AmbientOcclusion;
+	float3 Emissive;
+};
+
+/**
+ * 解包法线。
+ * 1. 获取法线
+ * 2. 解包法线
+ * 3. 返回法线
+ */
+float3 CMP_UnpackNormal(float4 Sample)
+{
+	// 切线空间法线：BC5 只有 RG，Z 由 XY 重建。普通 RGB 法线图在正半球下结果相同
+	float2 XY = Sample.rg * 2.0 - 1.0;
+	float Z = sqrt(saturate(1.0 - dot(XY, XY)));
+	return float3(XY, Z);
+}
+
+/**
+ * 计算表面属性。
+ * 1. 获取材质参数和表面属性
+ * 2. 计算表面属性
+ * 3. 返回表面属性
+ */
+FCMP_PBRSurface CMP_EvaluatePBRSurface(FMaterialPixelParameters MaterialParameters, float2 UV, bool bIsFrontFace)
+{
+	FCMP_PBRSurface Result = (FCMP_PBRSurface)0;
+
+	float3 Albedo = max(BaseColor, 0.0);
+	BRANCH
+	if ((SurfaceMapMask & CMP_MAP_BASE) != 0)
+	{
+		Albedo *= BaseMap.Sample(SurfaceSampler, UV).rgb;
+	}
+	Result.BaseColor = Albedo;
+
+	float3 WorldNormal = CMP_GetWorldNormal(MaterialParameters, bIsFrontFace);
+	BRANCH
+	if ((SurfaceMapMask & CMP_MAP_NORMAL) != 0)
+	{
+		float3 TangentNormal = CMP_UnpackNormal(NormalMap.Sample(SurfaceSampler, UV));
+		TangentNormal = normalize(float3(TangentNormal.xy * NormalStrength, max(TangentNormal.z, 1e-4)));
+		WorldNormal = normalize(TransformTangentVectorToWorld(MaterialParameters.TangentToWorld, TangentNormal));
+		if (!bIsFrontFace)
+		{
+			WorldNormal = -WorldNormal;
+		}
+	}
+	Result.WorldNormal = WorldNormal;
+
+	float Metal = Metallic;
+	BRANCH
+	if ((SurfaceMapMask & CMP_MAP_METALLIC) != 0)
+	{
+		Metal = MetallicMap.Sample(SurfaceSampler, UV).r;
+	}
+	Result.Metallic = saturate(Metal);
+
+	float Rough = Roughness;
+	BRANCH
+	if ((SurfaceMapMask & CMP_MAP_ROUGHNESS) != 0)
+	{
+		Rough = RoughnessMap.Sample(SurfaceSampler, UV).r;
+	}
+	Result.Roughness = clamp(Rough, 0.02, 1.0);
+
+	float AO = AmbientOcclusion;
+	BRANCH
+	if ((SurfaceMapMask & CMP_MAP_AO) != 0)
+	{
+		AO = AOMap.Sample(SurfaceSampler, UV).r;
+	}
+	Result.AmbientOcclusion = saturate(AO);
+
+	Result.Specular = saturate(Specular);
+	Result.Emissive = max(Emissive, 0.0);
+	return Result;
+}

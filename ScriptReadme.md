@@ -58,6 +58,7 @@ UE 多了一层固定骨架：**Shader 类型 → Processor 填 DrawCommand → 
 │    CustomMeshPassMeshProcessor.*        怎么生成 DrawCommand：RenderState / 选 Shader                      │
 │    CustomMeshPassShaders.*              Shader 类型 + 参数绑定                                            │
 │    CustomMeshPassLumenBridge.*          唯一碰 Lumen 私有头的地方                                         │
+│    CustomMeshPassForwardLight.*         镜像引擎 ForwardLightStruct，给前向接 Light Grid 局部光源              │
 │    CustomMeshPassDrawItem.h             游戏线程 → 渲染线程的数据                                          │
 └────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -66,7 +67,7 @@ UE 多了一层固定骨架：**Shader 类型 → Processor 填 DrawCommand → 
 
 - **Public 头不出现任何渲染器类型**。使用者（你的游戏模块）只 include 组件 / 子系统 / 设置，不会被迫依赖 `Renderer` 私有头。所以 `Build.cs` 里 `RenderCore/RHI/Renderer/Projects` 都放在 **Private** 依赖。  
 - **每个文件只回答一个问题**：什么时候画（Extension）、怎么建 Pass（Passes）、怎么生成命令（Processor）、Shader 长什么样（Shaders）。  
-- **引擎私有 API 集中隔离**：Lumen 体积读取只在 `LumenBridge.cpp`，引擎升级时只改一处。  
+- **引擎私有 API 集中隔离**：Lumen 体积读取只在 `LumenBridge.cpp`，Light Grid 读取只在 `ForwardLight.cpp`，引擎升级时各改一处。  
 - **CVar 只有一个入口**：设置页、蓝图、渲染代码都通过 `CustomMeshPass::CVars::*`，不直接碰 `TAutoConsoleVariable`。
 
 ### 2.1 目录
@@ -76,12 +77,14 @@ Plugins/CustomMeshPass/
 ├── CustomMeshPass.uplugin
 ├── README.md / ScriptReadme.md
 ├── Shaders/Private/
-│   ├── CustomMeshPassCommon.ush      # VS→PS 结构、像素参数重建、法线翻转
-│   ├── CustomMeshPassBRDF.ush        # Lambert + GGX
+│   ├── CustomMeshPassCommon.ush      # VS→PS 结构、按通道拉 UV + Tiling/Offset、像素参数重建、法线翻转
+│   ├── CustomMeshPassSurface.ush     # FCMP_PBRSurface：标量 + Base/Normal/AO/Rough/Metal 贴图
+│   ├── CustomMeshPassBRDF.ush        # Lambert + GGX，F0 = 0.08 * Specular
 │   ├── CustomMeshPassIndirect.ush    # 天光 SH + Lumen 半透明体积采样
+│   ├── CustomMeshPassLocalLights.ush # 前向局部光源：遍历引擎 Light Grid，点光 / 聚光 / 矩形光
 │   ├── CustomMeshPassVertex.usf      # MainVS（两路径共用）
 │   ├── CustomMeshPassForward.usf     # MainPS：自写光照
-│   └── CustomMeshPassGBuffer.usf     # MainPS：EncodeGBuffer
+│   └── CustomMeshPassGBuffer.usf     # MainPS：EncodeGBuffer + 加法自发光
 └── Source/CustomMeshPass/
     ├── CustomMeshPass.Build.cs
     ├── Public/    (见上图)
@@ -135,7 +138,7 @@ ACustomMeshPassActor
 | 8 | `Rendering/CustomMeshPassPasses.*` | RDG Pass：RT 绑定、ViewRect、GPU Stat |
 | 9 | `Rendering/CustomMeshPassMeshProcessor.*` | RenderState / 选 Shader / BuildMeshDrawCommands |
 | 10 | `Rendering/CustomMeshPassShaders.*` | MeshMaterialShader 与参数绑定 |
-| 11 | `Rendering/CustomMeshPassLumenBridge.*` | 如何隔离引擎私有 API |
+| 11 | `Rendering/CustomMeshPassLumenBridge.*` + `CustomMeshPassForwardLight.*` | 如何隔离引擎私有 API；未导出的 UB 怎么镜像复用 |
 | 12 | `Shaders/Private/*` | 公共 ush + 三个入口 usf |
 | 13 | `Build.cs` + `.uplugin` | 依赖分层与私有头路径 |
 
@@ -172,7 +175,7 @@ ACustomMeshPassActor
 - GBufferA/B/C：Normal / Metal-Spec-Rough-ShadingModel / BaseColor(+AO)  
 - **Viewport 必须用 `FViewInfo::ViewRect`**，不能用 `UnscaledViewRect`（TAA 下会错位 → 黑影漂）  
 - 自定义 Pass **要写深度**，否则遮挡/后续重建会错  
-- GBuffer 路径对 SceneColor 用 **`CW_NONE`**，避免把 RT0 抹成黑  
+- GBuffer 路径对 SceneColor 用 **加法**（`CW_RGB`，One + One）只写自发光；自发光为 0 时加 0，不会把 RT0 抹黑  
 - Substrate 工程可能 **没有经典 GBuffer** → 自动回退前向  
 
 ### 4.5 两条「Lumen」别混
@@ -248,11 +251,25 @@ UE::ConfigUtilities::ApplyCVarSettingsFromIni(
 UENUM(BlueprintType)
 enum class ECustomMeshPassLightingPath : uint8 { ForwardCustom = 0, DeferredLumen = 1 };
 
-struct FCustomMeshPassSurface { FVector3f BaseColor; float Metallic; float Roughness; };
+struct FCustomMeshPassSurface
+{
+    FVector3f BaseColor;
+    float Metallic;
+    float Specular;          // 默认 0.5
+    float Roughness;
+    float AmbientOcclusion;  // 默认 1
+    FVector3f Emissive;
+
+    float NormalStrength;    // 默认 1，PS 用
+    uint32 UVChannel;        // 默认 0，VS 用
+    FVector2f UVTiling;      // 默认 (1,1)，VS 用
+    FVector2f UVOffset;      // 默认 (0,0)，VS 用
+};
 ```
 
 - **枚举带 `UENUM`**：要在设置页和蓝图里显示成下拉框。数值与 `r.CustomMeshPass.LightingPath` 一一对应，所以设置页可直接绑定这个 CVar  
 - **结构体不带 `USTRUCT`**：只在 C++ 里做游戏线程 → 渲染线程的拷贝，不需要反射  
+- **这里只有标量**。贴图是 `FTextureRHIRef`，放在私有的 `FCustomMeshPassDrawItem` 里。Public 头不出现 RHI 类型  
 
 ---
 
@@ -350,10 +367,13 @@ class CUSTOMMESHPASS_API UCustomMeshPassComponent : public UStaticMeshComponent
 
 ```cpp
 bool ShouldDrawWithCustomMeshPass() const;   // IsVisible() && SceneProxy
-FCustomMeshPassSurface GetSurface() const;   // 拷贝 BaseColor/Metallic/Roughness
+FCustomMeshPassSurface GetSurface() const;   // 只拷贝标量：BaseColor/Metallic/Specular/Roughness/AO/Emissive/NormalStrength/UV 参数
 ```
 
-渲染层不再直接读组件字段，组件内部怎么存参数（将来换成材质实例、DataAsset）都不影响渲染代码。
+贴图（`BaseMap` / `NormalMap` / `MetallicMap` / `RoughnessMap` / `AOMap`）是组件上的 `UTexture2D*`，**不进** `GetSurface()`。  
+`BeginRenderViewFamily` 里用 `GetResource()->GetTexture2DRHI()` 抓成 `FTextureRHIRef`，和标量一起放进 `FCustomMeshPassDrawItem`。这样 Public 头仍然不依赖 RHI，纹理在这一帧的渲染命令里也有引用计数。
+
+渲染层不再直接读组件的标量字段。有贴图时用贴图（金属 / 粗糙 / AO 取 R），没有贴图时用标量；`BaseColor` 在有 `BaseMap` 时作为颜色相乘。
 
 #### 5.5.4 OnRegister / OnUnregister
 
@@ -438,7 +458,8 @@ ENQUEUE_RENDER_COMMAND(CustomMeshPassSetDrawItems)(
 
 1. 绑 SceneColor（Load）+ Depth 可写（没有深度时用 DepthDummy）  
 2. `GetLumenTranslucencyGIVolume` 取 Lumen 半透明体积（失败时黑色 3D 纹理）  
-3. `AddPass("CustomMeshPass_Forward N")`，**在 Pass lambda 内**才 `GetRHI()`（RDG 纹理的 RHI 资源只在执行期有效）
+3. `CreateForwardLightUniformBuffer` 拷一份本帧 Light Grid，作为 `ForwardLight` 声明在 Pass 参数里（见 5.11.1）  
+4. `AddPass("CustomMeshPass_Forward N")`，**在 Pass lambda 内**才 `GetRHI()`（RDG 纹理 / UB 的 RHI 资源只在执行期有效）
 
 #### 5.8.3 调试标记
 
@@ -458,6 +479,7 @@ SetViewport(ViewRect)
           → 跳过 GetPrimitiveSceneInfo()==nullptr 的 Proxy（尚未进场景，没有 GPUScene 数据）
           → Proxy->GetMeshDescription(LOD0) → FMeshBatch
           → CurrentElementData.Surface = Item.Surface
+          → CurrentElementData 的五张贴图 = Item 上的 FTextureRHIRef
           → AddMeshBatch
 ```
 
@@ -473,7 +495,7 @@ SetViewport(ViewRect)
 
 | 模式 | Blend | Depth |
 |---|---|---|
-| WriteGBufferForLumen | RT0 `CW_NONE`，RT1–3 写 | `DepthNearOrEqual` + 写入 + StencilWrite |
+| WriteGBufferForLumen | RT0 加法写自发光（`CW_RGB`，One+One），RT1–3 写 GBuffer | `DepthNearOrEqual` + 写入 + StencilWrite |
 | ForwardCustomBRDF | 默认不透明写 SceneColor | `DepthNearOrEqual` + 写入 |
 
 #### 5.9.2 AddMeshBatch
@@ -507,13 +529,16 @@ void BuildCommands(...)
 
 | 类 | 文件 / 入口 | 用途 |
 |---|---|---|
-| `FCustomMeshPassVS` | `CustomMeshPassVertex.usf` `MainVS` | 两路径共用 |
+| `FCustomMeshPassVS` | `CustomMeshPassVertex.usf` `MainVS` | 两路径共用；绑定 `UVChannel` / `UVTilingOffset` |
 | `FCustomMeshPassForwardPS` | `CustomMeshPassForward.usf` `MainPS` | 前向 BRDF |
 | `FCustomMeshPassGBufferPS` | `CustomMeshPassGBuffer.usf` `MainPS` | 写 GBuffer |
 
 **`ShouldCompilePermutation`：** 只给 **默认表面材质 × `FLocalVertexFactory`** 编译。渲染时本来就只用默认材质，其它材质生成的变体全是浪费。
 
-**ElementData =「材质参数块」：** `Surface` + 前向用的 Lumen 体积，在 `GetShaderBindings` 里 `ShaderBindings.Add(...)` 喂给 HLSL 全局变量。
+**ElementData =「材质参数块」：** `Surface` 标量 + 五张贴图的 `FRHITexture*` + 前向用的 Lumen 体积和 Light Grid UB（`ForwardLightUniformBuffer`）。  
+ForwardPS 的 `ModifyCompilationEnvironment` 补上 `FORWARD_LIGHT_DATA_STRIDE` / `NUM_CULLED_LIGHTS_GRID_STRIDE`，`LightGridCommon.ush` 靠它们算缓冲下标。  
+VS 和 PS 各自有 `GetShaderBindings`，收到的是同一份 ElementData：VS 只取 UV 相关字段，PS 取其余表面参数。`BuildMeshDrawCommands` 按模板参数调到各 Shader 自己的 `GetShaderBindings`，所以 VS 也能用插件自定义的 ElementData 类型。  
+`GetShaderBindings` 里 `ShaderBindings.Add(...)` / `AddTexture(...)` 喂给 HLSL。贴图为空时仍绑一张白图，并用 `SurfaceMapMask` 告诉着色器这个槽无效（空 SRV 在 D3D 上不合法）。掩码位与 `CustomMeshPassSurface.ush` 的 `CMP_MAP_*` 一致。
 
 ---
 
@@ -526,6 +551,39 @@ FCustomMeshPassLumenVolume GetLumenTranslucencyGIVolume(FRDGBuilder&, const FSce
 `FViewInfo::GetOwnLumenTranslucencyGIVolume()` 来自 `Renderer/Private`，每个引擎版本都可能变。  
 把它包在一个函数里：Passes 只认识 `FCustomMeshPassLumenVolume`，升级引擎时只改这个 cpp。
 
+#### 5.11.1 `CustomMeshPassForwardLight` — 前向局部光源
+
+延迟管线每帧都会调用 `PrepareForwardLightData` 建 Light Grid：把屏幕切成格子（默认 64 像素 × 32 层深度），每格记下影响它的点光 / 聚光 / 矩形光。结果放在 `FViewInfo::ForwardLightingResources`，半透明、体积雾、MegaLights 都在用。
+
+**问题：** 这份数据的类型 `FForwardLightUniformParameters` 声明时没有 `RENDERER_API`，插件：
+
+- 不能写 `SHADER_PARAMETER_RDG_UNIFORM_BUFFER(FForwardLightUniformParameters, ...)`（要链接它的 `GetStructMetadata`）  
+- 不能 `GetUniformBufferParameter<FForwardLightUniformParameters>()`（同上）  
+- 不声明又不行：RDG 只给 Pass 里声明过的 UB 创建 RHI，也只追踪声明过的缓冲的生命周期
+
+**做法：镜像一份同布局的 UB。**
+
+```
+C++  FCustomMeshPassForwardLightParameters  ← 成员名 / 顺序与引擎完全一致，Shader 变量名 CMPForwardLight
+     CreateForwardLightUniformBuffer()      ← 逐字段从 View.ForwardLightingResources.ForwardLightUniformParameters 拷贝
+                                               （SRV 指针是 RDG 资源，拷过来就等于在本 Pass 里再声明一次）
+HLSL #define ForwardLightStruct CMPForwardLight
+     #include "/Engine/Private/LightGridCommon.ush"   ← 引擎的格子查找 / 解包函数原样复用
+```
+
+逐字段拷贝而不是 `memcpy`：引擎改了成员名或删了字段时会直接编译报错，而不是悄悄错位。
+
+**Shader 侧（`CustomMeshPassLocalLights.ush`）：**
+
+1. `PixelPos = SvPosition.xy - ViewRectMin`，`SceneDepth = ConvertFromDeviceZ(SvPosition.z)` → `ComputeLightGridCellIndex`  
+2. `GetCulledLightsGridHeader` 拿到这格的光源数和起始下标  
+3. 逐个 `GetLocalLightDataFromGrid` → `ConvertToDeferredLight` 解包成 `FDeferredLightData`  
+4. 衰减与 `DeferredLightingCommon.ush` 的 `GetLocalLightAttenuation` 一致（反平方遮罩 / 指数衰减 + 聚光锥角），再乘 `1 / (d² + 1)`  
+5. 矩形光：单面发光，按「面积 × 光源侧余弦」近似成点光（引擎已把颜色除以 `0.5 × 宽 × 高`）  
+6. 光照结果交给同一个 `CMP_BRDF_Direct`，和主方向光累加
+
+不做的：阴影、IES、光照函数、Lighting Channel 1/2（只认 Channel 0）。路径追踪模式下 Light Grid 不构建，走空 UB（`NumLocalLights = 0`）。
+
 ---
 
 ### 5.12 Shader 文件
@@ -534,15 +592,43 @@ FCustomMeshPassLumenVolume GetLumenTranslucencyGIVolume(FRDGBuilder&, const FSce
 
 | 文件 | 内容 |
 |---|---|
-| `CustomMeshPassCommon.ush` | `FCustomMeshPassVSToPS`、`CMP_GetPixelParameters`、`CMP_GetWorldNormal` |
-| `CustomMeshPassBRDF.ush` | Fresnel / GGX D / Smith G / `CMP_BRDF_Direct` |
+| `CustomMeshPassCommon.ush` | `FCustomMeshPassVSToPS`（含 `BaseUV`）、`UVChannel` / `UVTilingOffset`、`CMP_FetchMeshUV`、`CMP_FetchBaseUV`、`CMP_GetPixelParameters`、`CMP_GetWorldNormal` |
+| `CustomMeshPassSurface.ush` | `FCMP_PBRSurface`、贴图与标量声明、`CMP_EvaluatePBRSurface` |
+| `CustomMeshPassBRDF.ush` | Fresnel / GGX D / Smith G / `CMP_ComputeF0` / `CMP_BRDF_Direct` |
 | `CustomMeshPassIndirect.ush` | Lumen 体积参数声明、`CMP_GetSkySHDiffuse`、`CMP_SampleLumenDiffuseGI` |
+| `CustomMeshPassLocalLights.ush` | 重定向 `ForwardLightStruct` 后 include `LightGridCommon.ush`、`CMP_LocalLightAttenuation`、`CMP_EvaluateLocalLights` |
 
 **入口 usf（对应 C++ Shader 类型）：**
 
-- `CustomMeshPassVertex.usf`：Local VF → WorldPos(+WPO) → `TranslatedWorldToClip`。原来两个 usf 各拷一份 VS，现在只有一份  
-- `CustomMeshPassGBuffer.usf`：填 `FGBufferData`（DefaultLit）→ `EncodeGBuffer` 输出 SV_Target1/2/3；SV_Target0 = 0（C++ 侧 CW_NONE 双保险）  
-- `CustomMeshPassForward.usf`：Direct（`AtmosphereLightDirection[0]`）+ Indirect（Lumen 体积 / SkySH）+ 极简环境高光，最后 `* PreExposure`
+- `CustomMeshPassVertex.usf`：Local VF → `CMP_FetchBaseUV` → WorldPos(+WPO) → `TranslatedWorldToClip`。两条路径共用这一份 VS  
+- `CustomMeshPassGBuffer.usf`：`CMP_EvaluatePBRSurface` 填 `FGBufferData`（DefaultLit）→ `EncodeGBuffer`；SV_Target0 = 自发光 × PreExposure（C++ 侧加法）  
+- `CustomMeshPassForward.usf`：同一份表面。Direct（`AtmosphereLightDirection[0]` + `CMP_EvaluateLocalLights`）+ Indirect（Lumen 体积 / SkySH，再乘 AO）+ 极简环境高光 + 自发光，最后 `* PreExposure`
+
+#### 5.12.1 为什么 UV 不走材质的 TexCoords
+
+`ShouldCompilePermutation` 把着色器锁在**默认表面材质**上。默认材质不采样纹理，`NUM_MATERIAL_TEXCOORDS` 往往是 0，`MaterialParameters.TexCoords` 会被编译掉。
+
+`CMP_FetchBaseUV` 因此在顶点着色器里直接读 `FLocalVertexFactory` 的手动顶点拉取缓冲：
+
+```hlsl
+LocalVF.VertexFetch_TexCoordBuffer[NumTexCoords * (VertexOffset + VertexId)]
+```
+
+多套 UV 在缓冲里按顶点交错存放（UV0, UV1, … 再到下一个顶点），所以第 `UVChannel` 套的下标是 `NumTexCoords × 顶点号 + min(UVChannel, NumTexCoords - 1)`，与引擎 `LocalVertexFactory.ush` 的写法相同，越界时夹到最后一套。
+
+拿到网格 UV 后立刻做 `UV × Tiling + Offset`（`UVTilingOffset` = xy Tiling、zw Offset）。这是线性变换，放在 VS 里插值出来的结果和逐像素计算完全一样，还省掉每个像素一次乘加。
+
+插值语义用自定义的 `CMP_BASEUV`，避开顶点工厂已经占用的 `TEXCOORD`。桌面端 StaticMesh 默认走 Manual Vertex Fetch；非 Manual Vertex Fetch 的平台只能拿到 UV0。网格没有 UV 时返回 0，贴图会采到一个点上。Virtual Texture 的 `GetTexture2DRHI()` 为空，该槽退回标量。
+
+`FCMP_PBRSurface` 是两条像素着色器的唯一表面输入，字段对齐引擎 Default Lit：
+
+| 字段 | 来源 |
+|---|---|
+| BaseColor | `BaseColor`，有 BaseMap 时再乘贴图（sRGB 由纹理自身解码） |
+| WorldNormal | 顶点法线，或 NormalMap（切线空间，Z 由 XY 重建；XY × `NormalStrength` 后重新归一化）经 `TangentToWorld` |
+| Metallic / Roughness / AmbientOcclusion | 有对应贴图时取 R，否则用标量 |
+| Specular | 标量，默认 0.5。`CMP_ComputeF0` = `lerp(0.08 * Specular, BaseColor, Metallic)` |
+| Emissive | 标量，不加贴图 |
 
 **include 规则：** 插件内部 include 一律写完整虚拟路径 `/Plugin/CustomMeshPass/Private/xxx.ush`；每个入口 usf 先 include `/Engine/Private/Common.ush`。
 
@@ -572,13 +658,13 @@ PrivateIncludePaths          = Renderer/Private, Renderer/Internal           // 
         │
         BasePass           ← 本组件不画
         │
-        ★ PostRenderBasePassDeferred   ← DeferredGBuffer：写 A/B/C
+        ★ PostRenderBasePassDeferred   ← DeferredGBuffer：写 A/B/C，SceneColor 加法叠自发光
         │
         Deferred Lights + Lumen Screen Probe
         │
         半透明等
         │
-        ★ PrePostProcess               ← Forward：自写 BRDF
+        ★ PrePostProcess               ← Forward：自写 BRDF（读本帧早先建好的 Light Grid）
         │
         PostProcess
         │
@@ -590,7 +676,7 @@ PrivateIncludePaths          = Renderer/Private, Renderer/Internal           // 
 ## 7. 实验建议
 
 1. 项目设置里关掉 Enabled：确认黑剪影（只剩深度）  
-2. Lighting Path 切 Forward：改 Roughness 看高光变化  
+2. Lighting Path 切 Forward：改 Roughness 看高光变化；挂 BaseMap / NormalMap（网格需有 UV）看贴图，拖 NormalStrength / UVTiling / UVOffset 看变化；放几盏点光 / 聚光，和 Deferred 对比（前向无阴影）  
 3. Lighting Path 切 Deferred + Lumen：开 Lumen 看间接光和阴影  
 4. 关卡蓝图 BeginPlay 调 `Set Lighting Path`，再去设置页改，体会 SetByCode 优先级  
 5. `stat gpu` 看 CustomMeshPass 耗时；RenderDoc 抓帧找 `CustomMeshPass` 事件  
@@ -609,7 +695,13 @@ PrivateIncludePaths          = Renderer/Private, Renderer/Internal           // 
 | 材质编辑器预览也出现 | 没调基类 `IsActiveThisFrame_Internal` |
 | Substrate 下黑 | 无经典 GBuffer；应走前向回退 |
 | 设置页改了没反应 | `ConsoleVariables.ini` 或蓝图 SetByCode 写过同一 CVar（优先级更高） |
-| F12 跳不进定义 | `compile_commands.json` 未含插件或含 @rsp；重新生成并运行 `Tools/expand_compile_commands.py` |
+| 贴图没有变化 | 网格没有 UV、UVTiling 为 0，或用了 Virtual Texture。Roughness / Metallic / AO / Normal 需要关闭 sRGB |
+| 改 UVChannel 没变化 | 网格只有一套 UV（夹到最后一套），或平台不走 Manual Vertex Fetch |
+| 法线方向反了 | 导入时勾选 Flip Green Channel。着色器不再翻绿通道，避免翻两次 |
+| 前向下暗面 / 亮面和 Deferred 相反 | 多半是场景主要靠点光照明而前向没算局部光源（已接 Light Grid）；主方向光 `L0` 不要取负 |
+| 前向下点光穿墙 | 局部光源不算阴影，预期行为 |
+| 升级引擎后 `CustomMeshPassForwardLight.cpp` 编译失败 | 对照 `SceneRendering.h` 的 `FForwardLightUniformParameters` 同步镜像结构 |
+| F12 跳不进定义 / 新文件满屏红线 | `compile_commands.json` 没收录该文件。先编译一次插件，再运行 `Scripts/RefreshCompileCommands.ps1`，然后 Reload Window |
 
 ---
 
@@ -631,9 +723,12 @@ PrivateIncludePaths          = Renderer/Private, Renderer/Internal           // 
 | 想做的事 | 改哪里 |
 |---|---|
 | 绕开材质系统（GlobalShader + 手动顶点拉取） | 新增 `Rendering/` 下的 Shader + Pass，Extension 分派多一个分支 |
-| 更多表面参数（自发光、法线贴图） | `FCustomMeshPassSurface` + 组件属性 + Shaders 绑定 + usf |
+| 更多表面参数 | 标量加进 `FCustomMeshPassSurface`；贴图加进 `FCustomMeshPassDrawItem` + `SurfaceMapMask` + `CustomMeshPassSurface.ush` |
+| 每张贴图独立 Tiling / UV 通道 | VS 输出多组 UV（插值器增加），或 PS 里按贴图各自变换；参数放进 `FCustomMeshPassSurface` |
 | 新的渲染路径 | `ECustomMeshPassRenderPath` + `ResolveRenderPath_RenderThread` |
 | 升级引擎后 Lumen 编译失败 | 只看 `CustomMeshPassLumenBridge.cpp` |
+| 前向局部光源加阴影 | 需要 VSM / ShadowMask，工作量大；更现实的是切 Deferred + Lumen |
+| 前向主方向光不依赖 Atmosphere Sun Light | `CustomMeshPassForward.usf` 改读 `CMPForwardLight.DirectionalLightDirection / Color`（已绑定） |
 
 ---
 
@@ -643,8 +738,9 @@ PrivateIncludePaths          = Renderer/Private, Renderer/Internal           // 
 - `BasePassRendering.cpp`：调用 `PostRenderBasePassDeferred_RenderThread` 的位置  
 - `DeferredShadingCommon.ush`：`EncodeGBuffer` / `FGBufferData`  
 - `SceneViewExtension.h`：还有哪些可挂钩子  
+- `LightGridInjection.cpp` + `LightGridCommon.ush`：Light Grid 怎么建、怎么查  
 - `RendererSettings.h`：引擎自己的 `UDeveloperSettingsBackedByCVars` 用法  
 
 ---
 
-*文档版本：与 CustomMeshPass v2.0 源码同步，供对照学习。*
+*文档版本：与 CustomMeshPass v2.0 源码同步（表面参数含 Base / Normal / AO / Roughness / Metallic 与 Default Lit 标量、NormalStrength、UV 通道 / Tiling / Offset；前向路径接入引擎 Light Grid 局部光源）。*

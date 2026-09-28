@@ -15,6 +15,8 @@ void MainVS(
 	FMaterialVertexParameters VertexParameters = GetMaterialVertexParameters(Input, VFIntermediates, WorldPosition.xyz, TangentToLocal);
 	Output.FactoryInterpolants = VertexFactoryGetInterpolantsVSToPS(Input, VFIntermediates, VertexParameters);
 
+	Output.BaseUV = CMP_FetchBaseUV(Input);
+
 	WorldPosition.xyz += GetMaterialWorldPositionOffset(VertexParameters);
 	float4 RasterizedWorldPosition = VertexFactoryGetRasterizedWorldPosition(Input, VFIntermediates, WorldPosition);
 	Output.Position = mul(RasterizedWorldPosition, ResolvedView.TranslatedWorldToClip);

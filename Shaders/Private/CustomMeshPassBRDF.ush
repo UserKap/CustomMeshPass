@@ -33,10 +33,16 @@ float CMP_G_Smith(float NdotV, float NdotL, float RoughnessIn)
 	return CMP_G_SchlickGGX(NdotV, k) * CMP_G_SchlickGGX(NdotL, k);
 }
 
+// 与 ShadingCommon.ush 的 ComputeF0 相同：电介质 F0 = 0.08 * Specular，Specular 默认 0.5 时为 0.04
+float3 CMP_ComputeF0(float3 Albedo, float Metal, float SpecularIn)
+{
+	return lerp(float3(0.08, 0.08, 0.08) * SpecularIn, Albedo, Metal);
+}
+
 // 直接光照 BRDF
 float3 CMP_BRDF_Direct(
 	float3 N, float3 V, float3 L,
-	float3 Albedo, float Metal, float Rough,
+	float3 Albedo, float Metal, float SpecularIn, float Rough,
 	float3 LightColor)
 {
 	float3 H = normalize(V + L);
@@ -45,7 +51,7 @@ float3 CMP_BRDF_Direct(
 	float NdotH = saturate(dot(N, H));
 	float VdotH = saturate(dot(V, H));
 
-	float3 F0 = lerp(float3(0.04, 0.04, 0.04), Albedo, Metal);
+	float3 F0 = CMP_ComputeF0(Albedo, Metal, SpecularIn);
 	float3 F = CMP_FresnelSchlick(VdotH, F0);
 	float a = max(Rough * Rough, 0.002);
 	float D = CMP_D_GGX(NdotH, a);

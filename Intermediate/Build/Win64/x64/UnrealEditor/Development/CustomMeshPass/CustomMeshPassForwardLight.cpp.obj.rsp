@@ -1,0 +1,14 @@
+"D:/UnityProject/Unreal_Learn_Project/Plugins/CustomMeshPass/Source/CustomMeshPass/Private/Rendering/CustomMeshPassForwardLight.cpp"
+@"D:/UnityProject/Unreal_Learn_Project/Plugins/CustomMeshPass/Intermediate/Build/Win64/x64/UnrealEditor/Development/CustomMeshPass/CustomMeshPass.Shared.rsp"
+/FI"D:/UnityProject/Unreal_Learn_Project/Intermediate/Build/Win64/x64/Unreal_Learn_ProjectEditor/Development/UnrealEd/SharedPCH.UnrealEd.Project.ValApi.ValExpApi.Cpp20.h"
+/FI"D:/UnityProject/Unreal_Learn_Project/Plugins/CustomMeshPass/Intermediate/Build/Win64/x64/UnrealEditor/Development/CustomMeshPass/Definitions.CustomMeshPass.h"
+/Yu"D:/UnityProject/Unreal_Learn_Project/Intermediate/Build/Win64/x64/Unreal_Learn_ProjectEditor/Development/UnrealEd/SharedPCH.UnrealEd.Project.ValApi.ValExpApi.Cpp20.h"
+/Fp"D:/UnityProject/Unreal_Learn_Project/Intermediate/Build/Win64/x64/Unreal_Learn_ProjectEditor/Development/UnrealEd/SharedPCH.UnrealEd.Project.ValApi.ValExpApi.Cpp20.h.pch"
+/Fo"D:/UnityProject/Unreal_Learn_Project/Plugins/CustomMeshPass/Intermediate/Build/Win64/x64/UnrealEditor/Development/CustomMeshPass/CustomMeshPassForwardLight.cpp.obj"
+/experimental:log "D:/UnityProject/Unreal_Learn_Project/Plugins/CustomMeshPass/Intermediate/Build/Win64/x64/UnrealEditor/Development/CustomMeshPass/CustomMeshPassForwardLight.cpp.sarif"
+/sourceDependencies "D:/UnityProject/Unreal_Learn_Project/Plugins/CustomMeshPass/Intermediate/Build/Win64/x64/UnrealEditor/Development/CustomMeshPass/CustomMeshPassForwardLight.cpp.dep.json"
+/nologo
+/TP
+/GR-
+/std:c++20
+/wd5054

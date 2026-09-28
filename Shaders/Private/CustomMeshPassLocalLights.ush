@@ -1,0 +1,87 @@
+// CustomMeshPass 前向局部光源：复用引擎 Light Grid（点光 / 聚光 / 矩形光）
+// 调用方须先 include Common.ush 与 CustomMeshPassBRDF.ush
+// 不含阴影、IES、光照函数；矩形光按点光近似
+
+#pragma once
+
+// C++ 侧 FCustomMeshPassForwardLightParameters 是引擎 ForwardLightStruct 的同布局镜像（UB 名 CMPForwardLight）
+#define ForwardLightStruct CMPForwardLight
+#include "/Engine/Private/LightGridCommon.ush"
+#undef ForwardLightStruct
+
+/** 与 DeferredLightingCommon.ush 的 GetLocalLightAttenuation 相同的距离 / 锥角遮罩，再乘上反平方衰减 */
+float CMP_LocalLightAttenuation(FDeferredLightData Light, float3 ToLight, float3 L)
+{
+	const float DistanceSqr = dot(ToLight, ToLight);
+
+	float Attenuation;
+	if (Light.bInverseSquared)
+	{
+		Attenuation = Square(saturate(1.0 - Square(DistanceSqr * Square(Light.InvRadius))));
+		Attenuation /= DistanceSqr + 1.0;
+	}
+	else
+	{
+		const float3 Normalized = ToLight * Light.InvRadius;
+		Attenuation = pow(1.0 - saturate(dot(Normalized, Normalized)), Light.FalloffExponent);
+	}
+
+	if (Light.bSpotLight)
+	{
+		// Direction 指向光源背面（与方向光约定一致），所以这里 dot(L, Direction) 即锥内余弦
+		Attenuation *= Square(saturate((dot(L, Light.Direction) - Light.SpotAngles.x) * Light.SpotAngles.y));
+	}
+
+	if (Light.bRectLight)
+	{
+		// 单面发光 + 面积 × 光源侧余弦（SourceRadius / SourceLength 是半宽 / 半高）
+		const float Area = 4.0 * Light.SourceRadius * Light.SourceLength;
+		Attenuation *= saturate(dot(L, Light.Direction)) * Area;
+	}
+
+	return Attenuation;
+}
+
+float3 CMP_EvaluateLocalLights(
+	float4 SvPosition, float3 TranslatedWorldPos,
+	float3 N, float3 V,
+	float3 Albedo, float Metal, float SpecularIn, float Rough)
+{
+	float3 Lighting = 0.0;
+	if (CMPForwardLight.DirectLightingShowFlag == 0 || CMPForwardLight.NumLocalLights == 0)
+	{
+		return Lighting;
+	}
+
+	const uint EyeIndex = 0;
+	const uint2 PixelPos = uint2(SvPosition.xy - ResolvedView.ViewRectMin.xy);
+	const float SceneDepth = ConvertFromDeviceZ(SvPosition.z);
+	const uint GridIndex = ComputeLightGridCellIndex(PixelPos, SceneDepth, EyeIndex);
+	const FCulledLightsGridHeader Header = GetCulledLightsGridHeader(GridIndex);
+
+	LOOP
+	for (uint Index = 0; Index < Header.NumLights; ++Index)
+	{
+		const FLocalLightData LocalLight = GetLocalLightDataFromGrid(Header.DataStartIndex + Index, EyeIndex);
+
+		// 默认图元只在 Lighting Channel 0
+		if ((UnpackLightingChannelMask(LocalLight) & 0x1) == 0)
+		{
+			continue;
+		}
+
+		const FDeferredLightData Light = ConvertToDeferredLight(LocalLight);
+		const float3 ToLight = Light.TranslatedWorldPosition - TranslatedWorldPos;
+		const float3 L = ToLight * rsqrt(max(dot(ToLight, ToLight), 1e-4));
+
+		const float Attenuation = CMP_LocalLightAttenuation(Light, ToLight, L);
+		if (Attenuation <= 0.0)
+		{
+			continue;
+		}
+
+		Lighting += CMP_BRDF_Direct(N, V, L, Albedo, Metal, SpecularIn, Rough, Light.Color * Attenuation);
+	}
+
+	return Lighting;
+}

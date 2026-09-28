@@ -1,17 +1,17 @@
 {
     "Version": "1.2",
     "Data": {
-        "Source": "e:\\project\\ue_learn\\plugins\\custommeshpass\\source\\custommeshpass\\private\\custommeshpasssettings.cpp",
+        "Source": "d:\\unityproject\\unreal_learn_project\\plugins\\custommeshpass\\source\\custommeshpass\\private\\custommeshpasssettings.cpp",
         "ProvidedModule": "",
-        "PCH": "e:\\project\\ue_learn\\intermediate\\build\\win64\\x64\\ue_learneditor\\development\\unrealed\\sharedpch.unrealed.project.valapi.cpp20.h.pch",
+        "PCH": "d:\\unityproject\\unreal_learn_project\\intermediate\\build\\win64\\x64\\unreal_learn_projecteditor\\development\\unrealed\\sharedpch.unrealed.project.valapi.valexpapi.cpp20.h.pch",
         "Includes": [
-            "e:\\project\\ue_learn\\plugins\\custommeshpass\\intermediate\\build\\win64\\x64\\unrealeditor\\development\\custommeshpass\\definitions.custommeshpass.h",
-            "e:\\project\\ue_learn\\plugins\\custommeshpass\\source\\custommeshpass\\public\\custommeshpasssettings.h",
-            "d:\\unreal\\ue_5.5\\engine\\source\\runtime\\developersettings\\public\\engine\\developersettingsbackedbycvars.h",
-            "d:\\unreal\\ue_5.5\\engine\\intermediate\\build\\win64\\unrealeditor\\inc\\developersettings\\uht\\developersettingsbackedbycvars.generated.h",
-            "e:\\project\\ue_learn\\plugins\\custommeshpass\\source\\custommeshpass\\public\\custommeshpasstypes.h",
-            "e:\\project\\ue_learn\\plugins\\custommeshpass\\intermediate\\build\\win64\\unrealeditor\\inc\\custommeshpass\\uht\\custommeshpasstypes.generated.h",
-            "e:\\project\\ue_learn\\plugins\\custommeshpass\\intermediate\\build\\win64\\unrealeditor\\inc\\custommeshpass\\uht\\custommeshpasssettings.generated.h"
+            "d:\\unityproject\\unreal_learn_project\\plugins\\custommeshpass\\intermediate\\build\\win64\\x64\\unrealeditor\\development\\custommeshpass\\definitions.custommeshpass.h",
+            "d:\\unityproject\\unreal_learn_project\\plugins\\custommeshpass\\source\\custommeshpass\\public\\custommeshpasssettings.h",
+            "d:\\ue\\ue_5.8\\engine\\source\\runtime\\developersettings\\public\\engine\\developersettingsbackedbycvars.h",
+            "d:\\ue\\ue_5.8\\engine\\intermediate\\build\\win64\\unrealeditor\\inc\\developersettings\\uht\\developersettingsbackedbycvars.generated.h",
+            "d:\\unityproject\\unreal_learn_project\\plugins\\custommeshpass\\source\\custommeshpass\\public\\custommeshpasstypes.h",
+            "d:\\unityproject\\unreal_learn_project\\plugins\\custommeshpass\\intermediate\\build\\win64\\unrealeditor\\inc\\custommeshpass\\uht\\custommeshpasstypes.generated.h",
+            "d:\\unityproject\\unreal_learn_project\\plugins\\custommeshpass\\intermediate\\build\\win64\\unrealeditor\\inc\\custommeshpass\\uht\\custommeshpasssettings.generated.h"
         ],
         "ImportedModules": [],
         "ImportedHeaderUnits": []

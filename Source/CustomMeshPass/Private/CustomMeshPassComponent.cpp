@@ -67,6 +67,13 @@ FCustomMeshPassSurface UCustomMeshPassComponent::GetSurface() const
 	FCustomMeshPassSurface Surface;
 	Surface.BaseColor = FVector3f(BaseColor.R, BaseColor.G, BaseColor.B);
 	Surface.Metallic = Metallic;
+	Surface.Specular = Specular;
 	Surface.Roughness = Roughness;
+	Surface.AmbientOcclusion = AmbientOcclusion;
+	Surface.Emissive = FVector3f(Emissive.R, Emissive.G, Emissive.B);
+	Surface.NormalStrength = FMath::Max(NormalStrength, 0.0f);
+	Surface.UVChannel = (uint32)FMath::Clamp(UVChannel, 0, 7);
+	Surface.UVTiling = FVector2f(UVTiling);
+	Surface.UVOffset = FVector2f(UVOffset);
 	return Surface;
 }

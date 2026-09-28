@@ -15,6 +15,7 @@
 			"CustomMeshPassModule.cpp.obj",
 			"CustomMeshPassSettings.cpp.obj",
 			"CustomMeshPassSubsystem.cpp.obj",
+			"CustomMeshPassForwardLight.cpp.obj",
 			"CustomMeshPassLumenBridge.cpp.obj",
 			"CustomMeshPassMeshProcessor.cpp.obj",
 			"CustomMeshPassPasses.cpp.obj",

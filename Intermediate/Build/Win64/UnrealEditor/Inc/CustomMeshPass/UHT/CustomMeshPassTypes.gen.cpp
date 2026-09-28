@@ -5,33 +5,34 @@
 ===========================================================================*/
 
 #include "UObject/GeneratedCppIncludes.h"
-#include "CustomMeshPass/Public/CustomMeshPassTypes.h"
+#include "CustomMeshPassTypes.h"
+
 PRAGMA_DISABLE_DEPRECATION_WARNINGS
+static_assert(!UE_WITH_CONSTINIT_UOBJECT, "This generated code can only be compiled with !UE_WITH_CONSTINIT_UOBJECT");
 void EmptyLinkFunctionForGeneratedCodeCustomMeshPassTypes() {}
 
-// Begin Cross Module References
-CUSTOMMESHPASS_API UEnum* Z_Construct_UEnum_CustomMeshPass_ECustomMeshPassLightingPath();
-UPackage* Z_Construct_UPackage__Script_CustomMeshPass();
-// End Cross Module References
+// ********** Begin Cross Module References ********************************************************
+// ********** End Cross Module References **********************************************************
 
-// Begin Enum ECustomMeshPassLightingPath
-static FEnumRegistrationInfo Z_Registration_Info_UEnum_ECustomMeshPassLightingPath;
-static UEnum* ECustomMeshPassLightingPath_StaticEnum()
+// ********** Begin Same Module References *********************************************************
+UPackage* Z_Construct_UPackage__Script_CustomMeshPass(ETypeConstructPhase);
+CUSTOMMESHPASS_API UEnum* Z_Construct_UEnum_CustomMeshPass_ECustomMeshPassLightingPath(ETypeConstructPhase);
+// ********** End Same Module References ***********************************************************
+#define UHT_STRUCT_BASE(INIT) UE::CodeGen::ConstInit::TCompiledInObjectPtr<const FStructBaseChain>(UE::Private::AsStructBaseChain(INIT))
+
+// ********** Begin Enum ECustomMeshPassLightingPath ***********************************************
+#ifdef UHT_STATICS
+#error UHT_STATICS already defined
+#endif
+#define UHT_STATICS Z_Construct_UEnum_CustomMeshPass_ECustomMeshPassLightingPath_Statics
+template<> CUSTOMMESHPASS_NON_ATTRIBUTED_API UEnum* StaticEnum<ECustomMeshPassLightingPath>()
 {
-	if (!Z_Registration_Info_UEnum_ECustomMeshPassLightingPath.OuterSingleton)
-	{
-		Z_Registration_Info_UEnum_ECustomMeshPassLightingPath.OuterSingleton = GetStaticEnum(Z_Construct_UEnum_CustomMeshPass_ECustomMeshPassLightingPath, (UObject*)Z_Construct_UPackage__Script_CustomMeshPass(), TEXT("ECustomMeshPassLightingPath"));
-	}
-	return Z_Registration_Info_UEnum_ECustomMeshPassLightingPath.OuterSingleton;
+	return Z_Construct_UEnum_CustomMeshPass_ECustomMeshPassLightingPath(ETypeConstructPhase::Outer);
 }
-template<> CUSTOMMESHPASS_API UEnum* StaticEnum<ECustomMeshPassLightingPath>()
-{
-	return ECustomMeshPassLightingPath_StaticEnum();
-}
-struct Z_Construct_UEnum_CustomMeshPass_ECustomMeshPassLightingPath_Statics
+struct UHT_STATICS
 {
 #if WITH_METADATA
-	static constexpr UECodeGen_Private::FMetaDataPairParam Enum_MetaDataParams[] = {
+	static constexpr UECodeGen_Private::FMetaDataPairParam Type_MetaData[] = {
 		{ "BlueprintType", "true" },
 #if !UE_BUILD_SHIPPING
 		{ "Comment", "/** \xe5\x85\x89\xe7\x85\xa7\xe8\xb7\xaf\xe5\xbe\x84\xef\xbc\x8c\xe6\x95\xb0\xe5\x80\xbc\xe4\xb8\x8e r.CustomMeshPass.LightingPath \xe4\xb8\x80\xe4\xb8\x80\xe5\xaf\xb9\xe5\xba\x94 */" },
@@ -55,39 +56,60 @@ struct Z_Construct_UEnum_CustomMeshPass_ECustomMeshPassLightingPath_Statics
 		{ "ECustomMeshPassLightingPath::DeferredLumen", (int64)ECustomMeshPassLightingPath::DeferredLumen },
 	};
 	static const UECodeGen_Private::FEnumParams EnumParams;
-};
-const UECodeGen_Private::FEnumParams Z_Construct_UEnum_CustomMeshPass_ECustomMeshPassLightingPath_Statics::EnumParams = {
-	(UObject*(*)())Z_Construct_UPackage__Script_CustomMeshPass,
+}; // struct UHT_STATICS 
+const UECodeGen_Private::FEnumParams UHT_STATICS::EnumParams = {
+	(FTypeConstructFunc*)Z_Construct_UPackage__Script_CustomMeshPass,
 	nullptr,
 	"ECustomMeshPassLightingPath",
 	"ECustomMeshPassLightingPath",
-	Z_Construct_UEnum_CustomMeshPass_ECustomMeshPassLightingPath_Statics::Enumerators,
+	UHT_STATICS::Enumerators,
 	RF_Public|RF_Transient|RF_MarkAsNative,
-	UE_ARRAY_COUNT(Z_Construct_UEnum_CustomMeshPass_ECustomMeshPassLightingPath_Statics::Enumerators),
+	UE_ARRAY_COUNT(UHT_STATICS::Enumerators),
 	EEnumFlags::None,
 	(uint8)UEnum::ECppForm::EnumClass,
-	METADATA_PARAMS(UE_ARRAY_COUNT(Z_Construct_UEnum_CustomMeshPass_ECustomMeshPassLightingPath_Statics::Enum_MetaDataParams), Z_Construct_UEnum_CustomMeshPass_ECustomMeshPassLightingPath_Statics::Enum_MetaDataParams)
+	(uint8)UEnum::EUnderlyingType::uint8,
+	METADATA_PARAMS(UE_ARRAY_COUNT(UHT_STATICS::Type_MetaData), UHT_STATICS::Type_MetaData)
 };
-UEnum* Z_Construct_UEnum_CustomMeshPass_ECustomMeshPassLightingPath()
+static FEnumRegistrationInfo ZRIE_ECustomMeshPassLightingPath;
+UEnum* Z_Construct_UEnum_CustomMeshPass_ECustomMeshPassLightingPath(ETypeConstructPhase Phase)
 {
-	if (!Z_Registration_Info_UEnum_ECustomMeshPassLightingPath.InnerSingleton)
+	if (Phase == ETypeConstructPhase::Outer)
 	{
-		UECodeGen_Private::ConstructUEnum(Z_Registration_Info_UEnum_ECustomMeshPassLightingPath.InnerSingleton, Z_Construct_UEnum_CustomMeshPass_ECustomMeshPassLightingPath_Statics::EnumParams);
+		if (!ZRIE_ECustomMeshPassLightingPath.OuterSingleton)
+		{
+			ZRIE_ECustomMeshPassLightingPath.OuterSingleton = GetStaticEnum(Z_Construct_UEnum_CustomMeshPass_ECustomMeshPassLightingPath, (UObject*)Z_Construct_UPackage__Script_CustomMeshPass(ETypeConstructPhase::Outer), TEXT("ECustomMeshPassLightingPath"));
+		}
+		return ZRIE_ECustomMeshPassLightingPath.OuterSingleton;
 	}
-	return Z_Registration_Info_UEnum_ECustomMeshPassLightingPath.InnerSingleton;
+	if (!ZRIE_ECustomMeshPassLightingPath.InnerSingleton)
+	{
+		UECodeGen_Private::ConstructUEnum(ZRIE_ECustomMeshPassLightingPath.InnerSingleton, UHT_STATICS::EnumParams);
+	}
+	return ZRIE_ECustomMeshPassLightingPath.InnerSingleton;
 }
-// End Enum ECustomMeshPassLightingPath
+#undef UHT_STATICS
+// ********** End Enum ECustomMeshPassLightingPath *************************************************
 
-// Begin Registration
-struct Z_CompiledInDeferFile_FID_UE_Learn_Plugins_CustomMeshPass_Source_CustomMeshPass_Public_CustomMeshPassTypes_h_Statics
+// ********** Begin Registration *******************************************************************
+#ifdef UHT_STATICS
+#error UHT_STATICS already defined
+#endif
+#define UHT_STATICS Z_CompiledInDeferFile_FID_UnityProject_Unreal_Learn_Project_Plugins_CustomMeshPass_Source_CustomMeshPass_Public_CustomMeshPassTypes_h__Script_CustomMeshPass_Statics
+struct UHT_STATICS
 {
 	static constexpr FEnumRegisterCompiledInInfo EnumInfo[] = {
-		{ ECustomMeshPassLightingPath_StaticEnum, TEXT("ECustomMeshPassLightingPath"), &Z_Registration_Info_UEnum_ECustomMeshPassLightingPath, CONSTRUCT_RELOAD_VERSION_INFO(FEnumReloadVersionInfo, 187488240U) },
+		{ Z_Construct_UEnum_CustomMeshPass_ECustomMeshPassLightingPath, TEXT("ECustomMeshPassLightingPath"), &ZRIE_ECustomMeshPassLightingPath, CONSTRUCT_RELOAD_VERSION_INFO(FEnumReloadVersionInfo, 463374955U) },
 	};
+}; // UHT_STATICS 
+static FRegisterCompiledInInfo Z_CompiledInDeferFile_FID_UnityProject_Unreal_Learn_Project_Plugins_CustomMeshPass_Source_CustomMeshPass_Public_CustomMeshPassTypes_h__Script_CustomMeshPass_088966d23bb9a8103d5931f403580d22cc62e9ee{
+	TEXT("/Script/CustomMeshPass"),
+	nullptr, 0,
+	nullptr, 0,
+	UHT_STATICS::EnumInfo, UE_ARRAY_COUNT(UHT_STATICS::EnumInfo),
+	nullptr, 0,
 };
-static FRegisterCompiledInInfo Z_CompiledInDeferFile_FID_UE_Learn_Plugins_CustomMeshPass_Source_CustomMeshPass_Public_CustomMeshPassTypes_h_2492173192(TEXT("/Script/CustomMeshPass"),
-	nullptr, 0,
-	nullptr, 0,
-	Z_CompiledInDeferFile_FID_UE_Learn_Plugins_CustomMeshPass_Source_CustomMeshPass_Public_CustomMeshPassTypes_h_Statics::EnumInfo, UE_ARRAY_COUNT(Z_CompiledInDeferFile_FID_UE_Learn_Plugins_CustomMeshPass_Source_CustomMeshPass_Public_CustomMeshPassTypes_h_Statics::EnumInfo));
-// End Registration
+#undef UHT_STATICS
+// ********** End Registration *********************************************************************
+#undef UHT_STRUCT_BASE
+
 PRAGMA_ENABLE_DEPRECATION_WARNINGS

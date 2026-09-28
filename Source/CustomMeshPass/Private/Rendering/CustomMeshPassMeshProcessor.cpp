@@ -27,14 +27,14 @@ FCustomMeshPassMeshProcessor::FCustomMeshPassMeshProcessor(
 {
 	if (DrawMode == ECustomMeshPassDrawMode::WriteGBufferForLumen)
 	{
-		// 不写 SceneColor（避免抹成黑）；写 GBufferA/B/C。深度写入，保证与后续光照/遮挡一致
-		//RT0 SceneColor
+		// RT0 只做加法写自发光（没有自发光时加 0，不会把 SceneColor 抹黑）
+		//RT0 SceneColor Emissive
 		//RT1 GBufferA WorldNormal
 		//RT2 GBufferB Metallic/Specular/Roughness/ShadingModelID
 		//RT3 GBufferC BaseColor/AO
 		PassDrawRenderState.SetBlendState(
 			TStaticBlendState<
-				CW_NONE, BO_Add, BF_One, BF_Zero, BO_Add, BF_One, BF_Zero, // RT0 SceneColor
+				CW_RGB, BO_Add, BF_One, BF_One, BO_Add, BF_Zero, BF_One, // RT0 SceneColor += Emissive
 				CW_RGBA, BO_Add, BF_One, BF_Zero, BO_Add, BF_One, BF_Zero, // RT1 GBufferA
 				CW_RGBA, BO_Add, BF_One, BF_Zero, BO_Add, BF_One, BF_Zero, // RT2 GBufferB
 				CW_RGBA, BO_Add, BF_One, BF_Zero, BO_Add, BF_One, BF_Zero  // RT3 GBufferC
